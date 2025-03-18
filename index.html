@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Comparaison des algorithmes de recherche</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <canvas id="performanceChart" width="800" height="400"></canvas>
+  <script>
+    // Résultats des benchmarks (à remplacer par les résultats réels)
+    const sequentialResults = [[100, 0.01235], [1000, 0.12452], [10000, 1.24563], [100000, 12.35648], [1000000, 124.58725]];
+    const binaryResults = [[100, 0.02345], [1000, 0.03615], [10000, 0.24532], [100000, 0.95623], [1000000, 3.24568]];
+    
+    // Préparer les données pour le graphique
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: sequentialResults.map(result => result[0]),
+        datasets: [
+          {
+            label: 'Recherche séquentielle',
+            data: sequentialResults.map(result => result[1]),
+            borderColor: 'rgb(255, 99, 132)',
+            tension: 0.1
+          },
+          {
+            label: 'Recherche binaire (avec tri)',
+            data: binaryResults.map(result => result[1]),
+            borderColor: 'rgb(54, 162, 235)',
+            tension: 0.1
+          }
+        ]
+      },
+      options: {
+        scales: {
+          x: {
+            type: 'logarithmic',
+            title: {
+              display: true,
+              text: 'Taille du tableau (échelle logarithmique)'
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Temps d\'exécution (ms)'
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
