@@ -20,6 +20,17 @@ class TSPGeneticAlgorithm {
   private tournamentSize: number;
   private population: Route[];
   private startCityId: number;
+  private colors = {
+    cyan: "\x1b[1;36m%s\x1b[0m",
+    yellow: "\x1b[1;33m%s\x1b[0m",
+    yellowLight: "\x1b[33m  • %s\x1b[0m",
+    purple: "\x1b[1;35m%s\x1b[0m",
+    purpleLight: "\x1b[35m  • %s\x1b[0m",
+    green: "\x1b[1;32m%s\x1b[0m",
+    greenLight: "\x1b[32m%s\x1b[0m",
+    blue: "\x1b[1;34m%s\x1b[0m",
+    blueLight: "\x1b[34m  • %s\x1b[0m"
+  };
 
   constructor(
     cities: City[],
@@ -51,7 +62,7 @@ class TSPGeneticAlgorithm {
     for (let i = 0; i < route.length - 1; i++) {
       const city1 = this.cities.find(c => c.id === route[i]);
       const city2 = this.cities.find(c => c.id === route[i + 1]);
-      
+
       if (city1 && city2) {
         totalDistance += this.calculateDistance(city1, city2);
       }
@@ -62,12 +73,12 @@ class TSPGeneticAlgorithm {
   // Initialise une population aléatoire
   private initializePopulation(): void {
     this.population = [];
-    
+
     for (let i = 0; i < this.populationSize; i++) {
       // Créer un parcours aléatoire en partant et revenant à la ville de départ
       const cityIds = this.cities.map(city => city.id)
         .filter(id => id !== this.startCityId);
-      
+
       // Mélanger les villes (sauf la ville de départ)
       for (let j = cityIds.length - 1; j > 0; j--) {
         const k = Math.floor(Math.random() * (j + 1));
@@ -76,12 +87,12 @@ class TSPGeneticAlgorithm {
           [cityIds[j], cityIds[k]] = [cityIds[k], cityIds[j]];
         }
       }
-      
+
       // Ajouter la ville de départ au début et à la fin
       const route = [this.startCityId, ...cityIds, this.startCityId];
       const distance = this.calculateTotalDistance(route);
       const fitness = 1 / distance;
-      
+
       this.population.push({ cities: route, distance, fitness });
     }
   }
@@ -96,7 +107,7 @@ class TSPGeneticAlgorithm {
         tournament.push(selectedRoute);
       }
     }
-    
+
     if (tournament.length === 0) {
       // Fallback au cas où le tournoi serait vide
       return this.population[0] || {
@@ -105,7 +116,7 @@ class TSPGeneticAlgorithm {
         fitness: 0
       };
     }
-    
+
     return tournament.reduce((best, current) => 
       current.fitness > best.fitness ? current : best, tournament[0]);
   }
@@ -113,20 +124,20 @@ class TSPGeneticAlgorithm {
   // Croisement (Order Crossover)
   private crossover(parent1: Route, parent2: Route): Route {
     const route = Array(parent1.cities.length).fill(-1);
-    
+
     // Garder la ville de départ/arrivée fixe
     route[0] = this.startCityId;
     route[route.length - 1] = this.startCityId;
-    
+
     // Sélectionner des points de croisement aléatoires
     const start = Math.floor(Math.random() * (route.length - 2)) + 1;
     const end = Math.floor(Math.random() * (route.length - start - 1)) + start;
-    
+
     // Copier une sous-séquence du premier parent
     for (let i = start; i <= end; i++) {
       route[i] = parent1.cities[i];
     }
-    
+
     // Remplir le reste avec les villes du second parent dans l'ordre
     let j = 1;
     for (let i = 1; i < parent2.cities.length - 1; i++) {
@@ -139,7 +150,7 @@ class TSPGeneticAlgorithm {
         }
       }
     }
-    
+
     const distance = this.calculateTotalDistance(route);
     return { cities: route, distance, fitness: 1 / distance };
   }
@@ -147,12 +158,12 @@ class TSPGeneticAlgorithm {
   // Mutation (permutation de deux villes ou inversion de séquence)
   private mutate(route: Route): Route {
     const newRoute = [...route.cities];
-    
+
     if (Math.random() < 0.5) {
       // Permutation de deux villes
       const idCity1 = Math.floor(Math.random() * (newRoute.length - 2)) + 1;
       const idCity2 = Math.floor(Math.random() * (newRoute.length - 2)) + 1;
-      
+
       if (newRoute[idCity1] !== undefined && newRoute[idCity2] !== undefined) {
         const temp = newRoute[idCity1];
         newRoute[idCity1] = newRoute[idCity2];
@@ -162,7 +173,7 @@ class TSPGeneticAlgorithm {
       // Inversion de séquence
       const start = Math.floor(Math.random() * (newRoute.length - 3)) + 1;
       const end = Math.floor(Math.random() * (newRoute.length - start - 1)) + start;
-      
+
       // Inverser la séquence
       const subArray = newRoute.slice(start, end + 1).reverse();
       for (let i = 0; i <= end - start; i++) {
@@ -171,7 +182,7 @@ class TSPGeneticAlgorithm {
         }
       }
     }
-    
+
     const distance = this.calculateTotalDistance(newRoute);
     return { cities: newRoute, distance, fitness: 1 / distance };
   }
@@ -180,31 +191,31 @@ class TSPGeneticAlgorithm {
   private evolve(): void {
     // Trier par fitness (décroissant)
     this.population.sort((a, b) => b.fitness - a.fitness);
-    
+
     const newPopulation: Route[] = [];
-    
+
     // Élitisme: conserver les meilleures routes
     for (let i = 0; i < this.elitismCount && i < this.population.length; i++) {
       if (this.population[i]) {
         newPopulation.push(this.population[i]);
       }
     }
-    
+
     // Créer le reste de la population par croisement et mutation
     while (newPopulation.length < this.populationSize) {
       const parent1 = this.tournamentSelection();
       const parent2 = this.tournamentSelection();
-      
+
       let offspring = this.crossover(parent1, parent2);
-      
+
       // Appliquer la mutation selon le taux
       if (Math.random() < this.mutationRate) {
         offspring = this.mutate(offspring);
       }
-      
+
       newPopulation.push(offspring);
     }
-    
+
     this.population = newPopulation;
   }
 
@@ -212,21 +223,56 @@ class TSPGeneticAlgorithm {
   public run(generations: number): Route {
     // Initialiser la population
     this.initializePopulation();
-    
+
     // Exécuter l'évolution sur plusieurs générations
     for (let i = 0; i < generations; i++) {
       this.evolve();
+      // Afficher l'état tous les 500 générations
+      if (i % 500 === 0) {
+        this.displayProgress(i, generations);
+      }
     }
-    
+
     // Trier une dernière fois et retourner la meilleure route
     this.population.sort((a, b) => b.fitness - a.fitness);
-    
+
     // Retourner la meilleure route, ou une route par défaut si la population est vide
     return this.population[0] || {
       cities: [this.startCityId, this.startCityId],
       distance: 0,
       fitness: 0
     };
+  }
+
+  // Affiche l'état actuel de l'algorithme
+  public displayProgress(currentGeneration: number, totalGenerations: number): void {
+    const bestRoute = this.population[0];
+    if (!bestRoute) return;
+
+    console.log(this.colors.greenLight, `📊 Génération ${currentGeneration}/${totalGenerations} - Meilleure distance: ${bestRoute.distance.toFixed(2)} km`);
+  }
+
+  // Affiche la liste des villes
+  public displayCities(): void {
+    console.log("\n" + this.colors.yellow, "📍 LISTE DES VILLES:");
+    this.cities.forEach(city => console.log(this.colors.yellowLight, city.name));
+  }
+
+  // Affiche les paramètres de l'algorithme
+  public displayParameters(): void {
+    console.log("\n" + this.colors.purple, "⚙️ PARAMÈTRES DE L'ALGORITHME:");
+    console.log(this.colors.purpleLight, "Taille de la population: " + this.populationSize);
+    console.log(this.colors.purpleLight, "Taux de mutation: " + this.mutationRate);
+    console.log(this.colors.purpleLight, "Nombre d'élites: " + this.elitismCount);
+    console.log(this.colors.purpleLight, "Taille du tournoi: " + this.tournamentSize);
+    console.log(this.colors.purpleLight, "Ville de départ: " + this.cities.find(c => c.id === this.startCityId)?.name + " (ID: " + this.startCityId + ")");
+  }
+
+  // Affiche les résultats finaux
+  public displayResults(bestRoute: Route): void {
+    console.log("\n" + this.colors.blue, "🏆 RÉSULTAT FINAL:");
+    console.log(this.colors.blueLight, "Itinéraire: " + bestRoute.cities.map(id => this.cities.find(c => c.id === id)?.name).join(" → "));
+    console.log(this.colors.blueLight, "Distance totale: " + bestRoute.distance.toFixed(2) + " km");
   }
 }
 
@@ -258,9 +304,6 @@ console.log(colors.cyan, "╔═════════════════
 console.log(colors.cyan, "║  ALGORITHME GÉNÉTIQUE POUR LE PROBLÈME DU VOYAGEUR        ║");
 console.log(colors.cyan, "╚═══════════════════════════════════════════════════════════╝");
 
-console.log("\n" + colors.yellow, "📍 LISTE DES VILLES:");
-cities.forEach(city => console.log(colors.yellowLight, city.name));
-
 // Définition des paramètres de l'algorithme
 const populationSize = 100;
 const mutationRate = 0.02;
@@ -269,19 +312,18 @@ const tournamentSize = 5;
 const startCityId = 0;
 const generations = 3000;
 
-console.log("\n" + colors.purple, "⚙️ PARAMÈTRES DE L'ALGORITHME:");
-console.log(colors.purpleLight, "Taille de la population: " + populationSize);
-console.log(colors.purpleLight, "Taux de mutation: " + mutationRate);
-console.log(colors.purpleLight, "Nombre d'élites: " + elitismCount);
-console.log(colors.purpleLight, "Taille du tournoi: " + tournamentSize);
-console.log(colors.purpleLight, "Ville de départ: " + cities.find(c => c.id === startCityId)?.name + " (ID: " + startCityId + ")");
-
-console.log("\n\x1b[1;32m%s\x1b[0m", "🚀 LANCEMENT DE L'ALGORITHME...");
+// Créer l'algorithme
 const tspSolver = new TSPGeneticAlgorithm(cities, populationSize, mutationRate, elitismCount, tournamentSize, startCityId);
 
+// Afficher les informations initiales
+tspSolver.displayCities();
+tspSolver.displayParameters();
+
+console.log("\n\x1b[1;32m%s\x1b[0m", "🚀 LANCEMENT DE L'ALGORITHME...");
 console.log("\x1b[32m%s\x1b[0m", `⏳ Recherche de la meilleure route sur ${generations} générations...`);
+
+// Exécuter l'algorithme
 const bestRoute = tspSolver.run(generations);
 
-console.log("\n\x1b[1;34m%s\x1b[0m", "🏆 RÉSULTAT FINAL:");
-console.log("\x1b[34m  • Itinéraire: %s\x1b[0m", bestRoute.cities.map(id => cities.find(c => c.id === id)?.name).join(" → "));
-console.log("\x1b[34m  • Distance totale: \x1b[1m%s\x1b[0m", bestRoute.distance.toFixed(2) + " km");
+// Afficher les résultats
+tspSolver.displayResults(bestRoute);
