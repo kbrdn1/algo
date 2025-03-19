@@ -227,8 +227,8 @@ class TSPGeneticAlgorithm {
     // Exécuter l'évolution sur plusieurs générations
     for (let i = 0; i < generations; i++) {
       this.evolve();
-      // Afficher l'état tous les 500 générations
-      if (i % 500 === 0) {
+      // Afficher l'état tous les 100 générations
+      if (i % 250 === 0) {
         this.displayProgress(i, generations);
       }
     }
